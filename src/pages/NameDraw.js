@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { participants } from '../data/participants';
 import { fetchSharedState, mergeWishlists, saveSharedState } from '../utils/sharedState';
 
@@ -73,21 +73,13 @@ const styles = {
   success: {
     color: '#047857'
   },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    marginTop: '1rem'
-  },
-  th: {
-    textAlign: 'left',
-    borderBottom: '1px solid #e5e7eb',
-    padding: '0.5rem 0'
-  },
-  td: {
-    padding: '0.45rem 0',
-    borderBottom: '1px solid #f1f5f9'
-  },
   list: {
+    paddingLeft: '1.25rem'
+  },
+  ruleList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.45rem',
     paddingLeft: '1.25rem'
   },
   statusBar: {
@@ -146,7 +138,7 @@ const NameDraw = ({ selectedUserId }) => {
         }
         setAssignments({});
         setWishlistStore(mergeWishlists());
-        setApiError('Sync service is offline. Start the Azure Functions API or set REACT_APP_STATE_ENDPOINT for local testing.');
+        setApiError('Sync service is offline. Start the Azure Functions API or set REACT_APP_STATE_ENDPOINT (or window.__STATE_API_OVERRIDE__) for local testing.');
         setApiOffline(true);
       } finally {
         if (!cancelled) {
@@ -214,8 +206,18 @@ const NameDraw = ({ selectedUserId }) => {
   }, []);
 
   const usedRecipients = useMemo(() => new Set(Object.values(assignments)), [assignments]);
-  const getDisplayName = (id) => participantMap.get(id)?.name || '--';
+  const getDisplayName = useCallback((id) => participantMap.get(id)?.name || '--', [participantMap]);
   const selectedParticipant = participantMap.get(selectedParticipantId);
+  const unassignedParticipants = useMemo(() => participants.filter((person) => !assignments[person.id]), [assignments]);
+  const drawingRules = useMemo(() =>
+    participants
+      .map((person) => ({
+        id: person.id,
+        name: person.name,
+        exclusions: (person.exclusions || []).map((blockedId) => getDisplayName(blockedId)).filter(Boolean)
+      }))
+          .filter((entry) => entry.exclusions.length > 0),
+        [getDisplayName]);
 
   const handleManualSubmit = () => {
     if (!selectedParticipantId) {
@@ -491,24 +493,32 @@ const NameDraw = ({ selectedUserId }) => {
       </section>
 
       <section style={styles.section}>
-        <h2 style={styles.heading}>Current Pairings</h2>
-        <p>Use this table to verify that every recipient is unique.</p>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Giver</th>
-              <th style={styles.th}>Recipient</th>
-            </tr>
-          </thead>
-          <tbody>
-            {participants.map((person) => (
-              <tr key={person.id}>
-                <td style={styles.td}>{person.name}</td>
-                <td style={styles.td}>{assignments[person.id] ? getDisplayName(assignments[person.id]) : '--'}</td>
-              </tr>
+        <h2 style={styles.heading}>Who Still Needs A Match?</h2>
+        <p>Focus on finishing the draw by reviewing the people who have not been assigned yet.</p>
+        {unassignedParticipants.length ? (
+          <ul style={styles.list}>
+            {unassignedParticipants.map((person) => (
+              <li key={person.id}>{person.name}</li>
             ))}
-          </tbody>
-        </table>
+          </ul>
+        ) : (
+          <p style={styles.success}>Everyone now has a recipient.</p>
+        )}
+      </section>
+
+      <section style={styles.section}>
+        <h2 style={styles.heading}>Drawing Rules & Safeguards</h2>
+        <p>The algorithm blocks every exclusion (like spouses, yourself, etc.). This list confirms the exact guardrails currently applied.</p>
+        <ul style={styles.ruleList}>
+          {drawingRules.map((rule) => (
+            <li key={rule.id}>
+              <strong>{rule.name}</strong> can’t draw {rule.exclusions.join(', ')}
+            </li>
+          ))}
+        </ul>
+        <p style={{ ...styles.message, ...styles.success }}>
+          Michele and Wes are mutually excluded, so they will never be assigned to each other.
+        </p>
       </section>
 
     </main>

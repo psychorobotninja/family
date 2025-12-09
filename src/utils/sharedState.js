@@ -37,8 +37,19 @@ export const pruneMessages = (messages = []) => {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
+const resolveEndpoint = () => {
+  if (STATE_API_ENDPOINT && STATE_API_ENDPOINT !== '/api/state') {
+    return STATE_API_ENDPOINT;
+  }
+  if (typeof window !== 'undefined' && window.__STATE_API_OVERRIDE__) {
+    return window.__STATE_API_OVERRIDE__;
+  }
+  const env = process.env.REACT_APP_STATE_ENDPOINT || process.env.REACT_APP_API_BASE;
+  return env || '/api/state';
+};
+
 export const fetchSharedState = async () => {
-  const response = await fetch(STATE_API_ENDPOINT, {
+  const response = await fetch(resolveEndpoint(), {
     headers: { Accept: 'application/json' }
   });
   if (!response.ok) {
@@ -48,7 +59,7 @@ export const fetchSharedState = async () => {
 };
 
 export const saveSharedState = async (partialState) => {
-  const response = await fetch(STATE_API_ENDPOINT, {
+  const response = await fetch(resolveEndpoint(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(partialState)

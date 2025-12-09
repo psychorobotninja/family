@@ -14,8 +14,9 @@ This Azure Static Web App keeps our shared gift planning tools, message board, a
 State is stored in Azure Table Storage via the `/api/state` function.
 
 1. Provide a storage connection string through `STATE_STORAGE_CONNECTION` (or rely on `AzureWebJobsStorage` in production Static Web Apps).
-2. When running `npm start`, proxy requests to the Azure Functions host or set `REACT_APP_STATE_ENDPOINT` to the full URL of the running function (e.g. `http://localhost:7071/api/state`).
-3. If the API is offline during local testing, the UI will fall back to defaults and show a "Sync offline" badge until the backend is reachable again.
+2. When running `npm start`, proxy requests to the Azure Functions host or set `REACT_APP_STATE_ENDPOINT` (or `REACT_APP_API_BASE`) to the full URL of the running function (e.g. `http://localhost:7071/api/state`).
+3. As a quick override for local experiments, you can also set `window.__STATE_API_OVERRIDE__ = 'http://localhost:7071/api/state'` in the browser console before loading the app.
+4. If the API is offline during local testing, the UI will fall back to defaults and show a "Sync offline" badge until the backend is reachable again.
 
 ### Local development tips
 

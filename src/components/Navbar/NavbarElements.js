@@ -3,13 +3,30 @@ import { FaBars } from 'react-icons/fa';
 import styled from 'styled-components';
 
 export const Nav = styled.nav`
-    background: #020617;
+    background: linear-gradient(120deg, #020617, #0f172a);
     height: 80px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 2rem;
     z-index: 12;
+    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.4);
+`;
+
+export const NavBrand = styled(Link)`
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    padding-right: 1rem;
+`;
+
+export const BrandTitle = styled.h1`
+    font-family: var(--family-display);
+    letter-spacing: 0.08em;
+    font-size: 1.5rem;
+    color: #f8fafc;
+    margin: 0;
+    text-transform: uppercase;
 `;
 
 export const NavLink = styled(Link)`

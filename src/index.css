@@ -1,0 +1,26 @@
+:root {
+  --family-body: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  --family-display: 'Playfair Display', 'Georgia', serif;
+  --family-bg: #f8fafc;
+  --family-text: #0f172a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--family-body);
+  background: var(--family-bg);
+  color: var(--family-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}

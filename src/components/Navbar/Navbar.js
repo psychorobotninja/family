@@ -1,5 +1,5 @@
 import React from "react";
-import { Nav, NavLink, NavMenu, NavActions, UserSelect, UserLabel } from "./NavbarElements";
+import { Nav, NavLink, NavMenu, NavActions, UserSelect, UserLabel, NavBrand, BrandTitle } from "./NavbarElements";
 import { participants } from "../../data/participants";
 
 const Navbar = ({ selectedUserId, onSelectUser }) => {
@@ -12,9 +12,9 @@ const Navbar = ({ selectedUserId, onSelectUser }) => {
     return (
         <Nav>
             <NavMenu>
-                <NavLink to="/">
-                    <h1 style={{ color: 'white', margin: 0 }}>Baca Family App</h1>
-                </NavLink>
+                <NavBrand to="/">
+                    <BrandTitle>Baca Family App</BrandTitle>
+                </NavBrand>
                 <NavLink to="/NameDraw" activeStyle>
                     Name Draw
                 </NavLink>
