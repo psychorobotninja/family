@@ -106,6 +106,15 @@ const styles = {
     fontWeight: 600,
     cursor: 'pointer'
   },
+  dangerButton: {
+    background: '#fee2e2',
+    color: '#b91c1c',
+    border: 'none',
+    borderRadius: '999px',
+    padding: '0.45rem 1rem',
+    fontWeight: 600,
+    cursor: 'pointer'
+  },
   status: {
     marginTop: '1rem',
     fontWeight: 600
@@ -114,6 +123,12 @@ const styles = {
     marginTop: '0.35rem',
     fontSize: '0.85rem',
     color: '#475569'
+  },
+  metaActions: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.5rem',
+    marginTop: '0.35rem'
   }
 };
 
@@ -274,6 +289,23 @@ const Calendar = ({ selectedUserId }) => {
   const handleRefresh = () => {
     fetchEvents();
     setStatus(null);
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    if (!ensureEditable()) {
+      return;
+    }
+    const target = events.find((entry) => entry.id === eventId);
+    if (!target) {
+      return;
+    }
+    const confirmationMessage = `Remove "${target.title}" from the shared calendar?`;
+    const confirmed = typeof window === 'undefined' ? true : window.confirm(confirmationMessage);
+    if (!confirmed) {
+      return;
+    }
+    const nextEvents = events.filter((entry) => entry.id !== eventId);
+    await persistEvents(nextEvents, 'Event removed.');
   };
 
   const sortedEvents = useMemo(
@@ -503,14 +535,27 @@ const Calendar = ({ selectedUserId }) => {
                     Last updated {formatDate(event.updatedAt || event.date)}
                     {event.updatedByName ? ` by ${event.updatedByName}` : ''}
                   </span>
-                  {!isEditing && selectedUserId && (
-                    <button
-                      type="button"
-                      style={{ ...styles.secondaryButton, marginLeft: '0.75rem', padding: '0.35rem 0.85rem' }}
-                      onClick={() => beginEditNote(event)}
-                    >
-                      Edit note
-                    </button>
+                  {selectedUserId && (
+                    <div style={styles.metaActions}>
+                      {!isEditing && (
+                        <button
+                          type="button"
+                          style={{ ...styles.secondaryButton, padding: '0.35rem 0.85rem' }}
+                          onClick={() => beginEditNote(event)}
+                          disabled={saving}
+                        >
+                          Edit note
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        style={styles.dangerButton}
+                        onClick={() => handleDeleteEvent(event.id)}
+                        disabled={saving}
+                      >
+                        Delete event
+                      </button>
+                    </div>
                   )}
                 </div>
               </article>
