@@ -1,6 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom/cjs/react-router-dom.min";
-import {FaBars } from 'react-icons/fa';
+import { Link } from "react-router-dom";
+import { FaBars } from 'react-icons/fa';
 import styled from 'styled-components';
 
 export const Nav = styled.nav`
@@ -19,7 +18,7 @@ export const NavLink = styled(Link)`
     text-decoration: none;
     padding: 0 1rem;
     height: 100%;
-    cursor: painter;
+    cursor: pointer;
     &.active {
         color: #15cdfc;
     }
