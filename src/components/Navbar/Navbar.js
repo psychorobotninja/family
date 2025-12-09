@@ -15,14 +15,14 @@ const Navbar = ({ selectedUserId, onSelectUser }) => {
                 <NavLink to="/">
                     <h1 style={{ color: 'white', margin: 0 }}>Baca Family App</h1>
                 </NavLink>
-                <NavLink to="/about" activeStyle>
-                    About
-                </NavLink>
                 <NavLink to="/NameDraw" activeStyle>
                     Name Draw
                 </NavLink>
                 <NavLink to="/Family" activeStyle>
                     Family
+                </NavLink>
+                <NavLink to="/Calendar" activeStyle>
+                    Calendar
                 </NavLink>
             </NavMenu>
             <NavActions>

@@ -1,25 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { participants, defaultWishlists } from '../data/participants';
-
-const API_ENDPOINT = '/api/state';
-
-const clone = (value) => JSON.parse(JSON.stringify(value));
-
-const mergeWishlists = (remoteWishlists = {}) => {
-  const merged = clone(defaultWishlists);
-  Object.entries(remoteWishlists || {}).forEach(([personId, entry]) => {
-    merged[personId] = {
-      ideas: Array.isArray(entry?.ideas) ? entry.ideas : [],
-      links: Array.isArray(entry?.links) ? entry.links : []
-    };
-  });
-  participants.forEach(({ id }) => {
-    if (!merged[id]) {
-      merged[id] = { ideas: [], links: [] };
-    }
-  });
-  return merged;
-};
+import { participants } from '../data/participants';
+import { fetchSharedState, mergeWishlists, saveSharedState } from '../utils/sharedState';
 
 const shuffle = (items) => {
   const copy = [...items];
@@ -138,13 +119,10 @@ const NameDraw = ({ selectedUserId }) => {
   const [drawFeedback, setDrawFeedback] = useState(null);
   const [revealMessage, setRevealMessage] = useState('');
   const [revealVerified, setRevealVerified] = useState(false);
-  const [activeWishlistId, setActiveWishlistId] = useState(participants[0]?.id || '');
-  const [newIdea, setNewIdea] = useState('');
-  const [newUrl, setNewUrl] = useState('');
-  const [wishlistFeedback, setWishlistFeedback] = useState(null);
   const [apiError, setApiError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [apiOffline, setApiOffline] = useState(false);
   const hydratedRef = useRef(false);
 
   const selectedParticipantId = selectedUserId || '';
@@ -154,24 +132,22 @@ const NameDraw = ({ selectedUserId }) => {
     const fetchState = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(API_ENDPOINT);
-        if (!response.ok) {
-          throw new Error('Failed to reach the shared state API');
-        }
-        const payload = await response.json();
+        const payload = await fetchSharedState();
         if (cancelled) {
           return;
         }
         setAssignments(payload.assignments || {});
         setWishlistStore(mergeWishlists(payload.wishlists));
         setApiError('');
+        setApiOffline(false);
       } catch (error) {
         if (cancelled) {
           return;
         }
         setAssignments({});
         setWishlistStore(mergeWishlists());
-        setApiError('Unable to load shared data. Showing defaults until the service is reachable.');
+        setApiError('Sync service is offline. Start the Azure Functions API or set REACT_APP_STATE_ENDPOINT for local testing.');
+        setApiOffline(true);
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -192,28 +168,21 @@ const NameDraw = ({ selectedUserId }) => {
       return;
     }
     let cancelled = false;
-    const controller = new AbortController();
 
     const persist = async () => {
       setIsSaving(true);
       try {
-        const response = await fetch(API_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ assignments, wishlists: wishlistStore }),
-          signal: controller.signal
-        });
-        if (!response.ok) {
-          throw new Error('Failed to save shared state');
-        }
+        await saveSharedState({ assignments });
         if (!cancelled) {
           setApiError('');
+          setApiOffline(false);
         }
       } catch (error) {
-        if (cancelled || error.name === 'AbortError') {
+        if (cancelled) {
           return;
         }
-        setApiError('Saving changes failed. We will retry on your next update.');
+        setApiError('Saving changes failed. We will retry once the Azure Functions API is reachable.');
+        setApiOffline(true);
       } finally {
         if (!cancelled) {
           setIsSaving(false);
@@ -225,9 +194,8 @@ const NameDraw = ({ selectedUserId }) => {
 
     return () => {
       cancelled = true;
-      controller.abort();
     };
-  }, [assignments, wishlistStore]);
+  }, [assignments]);
 
   useEffect(() => {
     setManualMode(false);
@@ -235,9 +203,6 @@ const NameDraw = ({ selectedUserId }) => {
     setManualFeedback(null);
     setRevealVerified(false);
     setRevealMessage('');
-    if (selectedParticipantId) {
-      setActiveWishlistId((current) => current || selectedParticipantId);
-    }
   }, [selectedParticipantId]);
 
   const participantMap = useMemo(() => {
@@ -355,50 +320,6 @@ const NameDraw = ({ selectedUserId }) => {
     setRevealMessage(`You are shopping for ${getDisplayName(assignedId)}.`);
   };
 
-  const currentWishlist = wishlistStore[activeWishlistId] || { ideas: [], links: [] };
-
-  const handleAddIdea = () => {
-    if (!activeWishlistId || !newIdea.trim()) {
-      setWishlistFeedback({ type: 'error', text: 'Enter an idea before saving.' });
-      return;
-    }
-    setWishlistStore((prev) => ({
-      ...prev,
-      [activeWishlistId]: {
-        ideas: [...(prev[activeWishlistId]?.ideas || []), newIdea.trim()],
-        links: [...(prev[activeWishlistId]?.links || [])]
-      }
-    }));
-    setNewIdea('');
-    setWishlistFeedback({ type: 'success', text: 'Idea added.' });
-  };
-
-  const handleAddUrl = () => {
-    if (!activeWishlistId || !newUrl.trim()) {
-      setWishlistFeedback({ type: 'error', text: 'Enter a URL before saving.' });
-      return;
-    }
-    try {
-      const parsedUrl = new URL(newUrl.trim());
-      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        throw new Error('Unsupported protocol');
-      }
-    } catch (error) {
-      setWishlistFeedback({ type: 'error', text: 'Please provide a valid URL (remember the https://).' });
-      return;
-    }
-
-    setWishlistStore((prev) => ({
-      ...prev,
-      [activeWishlistId]: {
-        ideas: [...(prev[activeWishlistId]?.ideas || [])],
-        links: [...(prev[activeWishlistId]?.links || []), newUrl.trim()]
-      }
-    }));
-    setNewUrl('');
-    setWishlistFeedback({ type: 'success', text: 'Link added.' });
-  };
-
   const manualRecipientOptions = selectedParticipantId
     ? participants.filter((person) => {
         const giverAssignment = assignments[selectedParticipantId];
@@ -427,7 +348,7 @@ const NameDraw = ({ selectedUserId }) => {
           {isLoading && <span style={styles.statusPill}>Loading shared data...</span>}
           {isSaving && !isLoading && <span style={styles.statusPill}>Saving changes...</span>}
           {apiError && !isLoading && (
-            <span style={{ ...styles.statusPill, background: '#fee2e2', color: '#b91c1c' }}>Sync issue</span>
+            <span style={{ ...styles.statusPill, background: '#fee2e2', color: '#b91c1c' }}>{apiOffline ? 'Sync offline' : 'Sync issue'}</span>
           )}
         </div>
       </div>
@@ -590,87 +511,6 @@ const NameDraw = ({ selectedUserId }) => {
         </table>
       </section>
 
-      <section style={styles.section}>
-        <h2 style={styles.heading}>Wish Lists & Idea Boards</h2>
-        <p>Everyone can keep a shared list of ideas and links. Updates are stored centrally so every browser sees the same content.</p>
-        <label style={styles.label} htmlFor="wishlist-person">
-          Pick a person to edit their list
-        </label>
-        <select
-          id="wishlist-person"
-          style={styles.select}
-          value={activeWishlistId}
-          onChange={(event) => setActiveWishlistId(event.target.value)}
-        >
-          {participants.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.name}
-            </option>
-          ))}
-        </select>
-        <div style={{ display: 'grid', gap: '1rem', marginTop: '1rem' }}>
-          <div>
-            <label style={styles.label} htmlFor="new-idea">
-              Add a new idea
-            </label>
-            <input
-              id="new-idea"
-              style={styles.select}
-              value={newIdea}
-              onChange={(event) => setNewIdea(event.target.value)}
-              placeholder="e.g. Cozy throw blanket"
-            />
-            <button style={styles.button} type="button" onClick={handleAddIdea}>
-              Add Idea
-            </button>
-          </div>
-          <div>
-            <label style={styles.label} htmlFor="new-url">
-              Add a new link
-            </label>
-            <input
-              id="new-url"
-              style={styles.select}
-              value={newUrl}
-              onChange={(event) => setNewUrl(event.target.value)}
-              placeholder="https://example.com/gift"
-            />
-            <button style={styles.button} type="button" onClick={handleAddUrl}>
-              Add Link
-            </button>
-          </div>
-        </div>
-        {wishlistFeedback && (
-          <p
-            style={{
-              ...styles.message,
-              ...(wishlistFeedback.type === 'error' ? styles.error : styles.success)
-            }}
-          >
-            {wishlistFeedback.text}
-          </p>
-        )}
-        <div style={{ marginTop: '1rem' }}>
-          <h3>Ideas</h3>
-          <ul style={styles.list}>
-            {currentWishlist.ideas.length ? currentWishlist.ideas.map((idea, index) => <li key={`${idea}-${index}`}>{idea}</li>) : <li>No ideas yet.</li>}
-          </ul>
-          <h3>Links</h3>
-          <ul style={styles.list}>
-            {currentWishlist.links.length ? (
-              currentWishlist.links.map((link, index) => (
-                <li key={`${link}-${index}`}>
-                  <a href={link} target="_blank" rel="noreferrer">
-                    {link}
-                  </a>
-                </li>
-              ))
-            ) : (
-              <li>No links yet.</li>
-            )}
-          </ul>
-        </div>
-      </section>
     </main>
   );
 };

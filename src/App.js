@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import Navbar from './components/Navbar/Navbar';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
-import Thomas from './pages/Thomas';
+import Family from './pages/Family';
 import NameDraw from './pages/NameDraw';
+import Thomas from './pages/Thomas';
+import Calendar from './pages/Calendar';
 
 const SELECTED_USER_KEY = 'family-selected-user';
 
@@ -30,9 +32,10 @@ function App() {
     <Router>
       <Navbar selectedUserId={selectedUserId} onSelectUser={setSelectedUserId} />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/Thomas" element={<Thomas />} />
+        <Route path="/" element={<Home selectedUserId={selectedUserId} />} />
+        <Route path="/Family" element={<Family selectedUserId={selectedUserId} />} />
         <Route path="/NameDraw" element={<NameDraw selectedUserId={selectedUserId} />} />
+        <Route path="/Calendar" element={<Calendar />} />
       </Routes>
     </Router>
   );
