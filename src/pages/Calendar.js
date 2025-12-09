@@ -153,7 +153,7 @@ const Calendar = () => {
             </div>
             <p style={{ margin: '0.5rem 0 0', fontWeight: 600 }}>{formatDate(event.date)}</p>
             <p style={{ margin: '0.25rem 0', color: '#475569' }}>{event.location}</p>
-            <p style={{ marginBottom: 0 }}>{event.description}</p>
+            <p style={{ marginBottom: 0 }}>{event.note}</p>
           </article>
         ))}
       </section>

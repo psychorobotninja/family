@@ -82,6 +82,16 @@ const styles = {
   },
   status: {
     marginTop: '0.85rem'
+  },
+  deleteButton: {
+    marginLeft: '0.75rem',
+    padding: '0.15rem 0.5rem',
+    borderRadius: '6px',
+    border: 'none',
+    background: '#fee2e2',
+    color: '#b91c1c',
+    fontSize: '0.8rem',
+    cursor: 'pointer'
   }
 };
 
@@ -182,6 +192,42 @@ const Family = ({ selectedUserId }) => {
     };
     setLinkDraft('');
     await persistWishlistChanges(nextWishlists, 'Link added to your list.');
+  };
+
+  const handleDeleteIdea = async (personId, ideaIndex) => {
+    if (!ensureEditable(personId)) {
+      return;
+    }
+    const current = wishlists[personId] || { ideas: [], links: [] };
+    if (!current.ideas[ideaIndex]) {
+      return;
+    }
+    const nextWishlists = {
+      ...wishlists,
+      [personId]: {
+        ideas: current.ideas.filter((_, index) => index !== ideaIndex),
+        links: [...current.links]
+      }
+    };
+    await persistWishlistChanges(nextWishlists, 'Idea removed.');
+  };
+
+  const handleDeleteLink = async (personId, linkIndex) => {
+    if (!ensureEditable(personId)) {
+      return;
+    }
+    const current = wishlists[personId] || { ideas: [], links: [] };
+    if (!current.links[linkIndex]) {
+      return;
+    }
+    const nextWishlists = {
+      ...wishlists,
+      [personId]: {
+        ideas: [...current.ideas],
+        links: current.links.filter((_, index) => index !== linkIndex)
+      }
+    };
+    await persistWishlistChanges(nextWishlists, 'Link removed.');
   };
 
   const refreshWishlists = async () => {
@@ -285,7 +331,25 @@ const Family = ({ selectedUserId }) => {
                 <div>
                   <strong>Ideas</strong>
                   <ul style={styles.list}>
-                    {wishlist.ideas.length ? wishlist.ideas.map((idea, index) => <li key={`${person.id}-idea-${index}`}>{idea}</li>) : <li>No ideas yet.</li>}
+                    {wishlist.ideas.length ? (
+                      wishlist.ideas.map((idea, index) => (
+                        <li key={`${person.id}-idea-${index}`}>
+                          {idea}
+                          {canEdit && (
+                            <button
+                              type="button"
+                              style={styles.deleteButton}
+                              onClick={() => handleDeleteIdea(person.id, index)}
+                              disabled={saving}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </li>
+                      ))
+                    ) : (
+                      <li>No ideas yet.</li>
+                    )}
                   </ul>
                 </div>
                 <div>
@@ -297,6 +361,16 @@ const Family = ({ selectedUserId }) => {
                           <a href={link} target="_blank" rel="noreferrer">
                             {link}
                           </a>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              style={styles.deleteButton}
+                              onClick={() => handleDeleteLink(person.id, index)}
+                              disabled={saving}
+                            >
+                              Remove
+                            </button>
+                          )}
                         </li>
                       ))
                     ) : (

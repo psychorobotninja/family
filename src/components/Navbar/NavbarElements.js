@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import styled from 'styled-components';
 
 export const Nav = styled.nav`
-    background: linear-gradient(120deg, #020617, #0f172a);
+    background: linear-gradient(120deg, #012e2f, #0b1956);
     height: 80px;
     display: flex;
     justify-content: space-between;

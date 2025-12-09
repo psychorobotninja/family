@@ -4,6 +4,12 @@ export const participants = [
   { id: 'thomas', name: 'Thomas', exclusions: ['erin'] },
   { id: 'michele', name: 'Michele', exclusions: ['wes'] },
   { id: 'wes', name: 'Wes', exclusions: ['michele'] },
+  { id: 'bernadette', name: 'Bernadette', exclusions: ['michael'] },
+  { id: 'michael', name: 'Michael', exclusions: ['bernadette'] },
+  { id: 'e', name: 'E', exclusions: ['jordon'] },
+  { id: 'jordon', name: 'Jordon', exclusions: ['e'] },
+  { id: 'rob', name: 'Rob', exclusions: ['vv'] },
+  { id: 'vv', name: 'VV', exclusions: ['rob'] }
 ];
 
 export const defaultWishlists = {
@@ -26,5 +32,29 @@ export const defaultWishlists = {
   wes: {
     ideas: ['Cycling accessories'],
     links: ['https://example.com/wes-bike-light']
+  },
+  bernadette: {
+    ideas: ['Weekend art retreat'],
+    links: ['https://example.com/bernadette-art-kit']
+  },
+  michael: {
+    ideas: ['Gourmet coffee subscription'],
+    links: ['https://example.com/michael-coffee']
+  },
+  e: {
+    ideas: ['Trail running gear'],
+    links: ['https://example.com/e-running-pack']
+  },
+  jordon: {
+    ideas: ['Photography workshop'],
+    links: ['https://example.com/jordon-camera-strap']
+  },
+  rob: {
+    ideas: ['Vinyl record club membership'],
+    links: ['https://example.com/rob-record-player']
+  },
+  vv: {
+    ideas: ['Designer planter set'],
+    links: ['https://example.com/vv-planter']
   }
 };
