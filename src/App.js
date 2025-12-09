@@ -34,7 +34,7 @@ function App() {
         <Route path="/" element={<Home selectedUserId={selectedUserId} />} />
         <Route path="/Family" element={<Family selectedUserId={selectedUserId} />} />
         <Route path="/NameDraw" element={<NameDraw selectedUserId={selectedUserId} />} />
-        <Route path="/Calendar" element={<Calendar />} />
+        <Route path="/Calendar" element={<Calendar selectedUserId={selectedUserId} />} />
       </Routes>
     </Router>
   );
