@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Family from './pages/Family';
 import NameDraw from './pages/NameDraw';
-import Thomas from './pages/Thomas';
 import Calendar from './pages/Calendar';
 
 const SELECTED_USER_KEY = 'family-selected-user';
