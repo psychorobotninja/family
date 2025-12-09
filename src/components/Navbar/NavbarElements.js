@@ -3,11 +3,12 @@ import { FaBars } from 'react-icons/fa';
 import styled from 'styled-components';
 
 export const Nav = styled.nav`
-    background: #000;
+    background: #020617;
     height: 80px;
     display: flex;
     justify-content: space-between;
-    padding: 0.2rem calc((100vw - 1000px) / 2);
+    align-items: center;
+    padding: 0 2rem;
     z-index: 12;
 `;
 
@@ -41,8 +42,28 @@ export const Bars = styled(FaBars)`
 export const NavMenu = styled.div`
     display: flex;
     align-items: center;
-    margin-right: -24px;
-    @media screen and (max-width: 768px) {
-        display: none;
-    }
- `;
+    gap: 1rem;
+`;
+
+export const NavActions = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #fff;
+`;
+
+export const UserSelect = styled.select`
+    background: #111827;
+    color: #fff;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.95rem;
+`;
+
+export const UserLabel = styled.span`
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+`;

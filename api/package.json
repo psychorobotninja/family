@@ -1,0 +1,14 @@
+{
+  "name": "family-api",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Azure Functions for the family gift app",
+  "main": "state/index.js",
+  "scripts": {
+    "test": "echo \"No tests\""
+  },
+  "dependencies": {
+    "@azure/data-tables": "^13.3.0"
+  }
+}
