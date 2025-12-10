@@ -207,7 +207,38 @@ const NameDraw = ({ selectedUserId }) => {
 
   const usedRecipients = useMemo(() => new Set(Object.values(assignments)), [assignments]);
   const getDisplayName = useCallback((id) => participantMap.get(id)?.name || '--', [participantMap]);
+  const validateAssignments = useCallback(
+    (mapping) => {
+      const recipientOwners = new Map();
+      for (const person of participants) {
+        const recipientId = mapping[person.id];
+        if (!recipientId) {
+          continue;
+        }
+        if (recipientId === person.id) {
+          return { ok: false, message: `${person.name} cannot draw themselves.` };
+        }
+        if ((person.exclusions || []).includes(recipientId)) {
+          return {
+            ok: false,
+            message: `${person.name} cannot draw ${getDisplayName(recipientId)}.`
+          };
+        }
+        if (recipientOwners.has(recipientId)) {
+          return {
+            ok: false,
+            message: `${getDisplayName(recipientId)} is already assigned to ${recipientOwners.get(recipientId)}.`
+          };
+        }
+        recipientOwners.set(recipientId, person.name);
+      }
+      return { ok: true };
+    },
+    [getDisplayName]
+  );
   const selectedParticipant = participantMap.get(selectedParticipantId);
+  const selectedParticipantHasAssignment = Boolean(assignments[selectedParticipantId]);
+  const selectedRecipientName = selectedParticipantHasAssignment ? getDisplayName(assignments[selectedParticipantId]) : '';
   const unassignedParticipants = useMemo(() => participants.filter((person) => !assignments[person.id]), [assignments]);
   const drawingRules = useMemo(() =>
     participants
@@ -222,6 +253,10 @@ const NameDraw = ({ selectedUserId }) => {
   const handleManualSubmit = () => {
     if (!selectedParticipantId) {
       setManualFeedback({ type: 'error', text: 'Pick your name from the header before recording an entry.' });
+      return;
+    }
+    if (selectedParticipantHasAssignment) {
+      setManualFeedback({ type: 'error', text: `You already recorded ${selectedRecipientName}. Ask an organizer if you need to make a change.` });
       return;
     }
     if (!manualRecipientId) {
@@ -244,10 +279,17 @@ const NameDraw = ({ selectedUserId }) => {
       return;
     }
 
-    setAssignments((prev) => ({
-      ...prev,
+    const nextAssignments = {
+      ...assignments,
       [selectedParticipantId]: manualRecipientId
-    }));
+    };
+    const validation = validateAssignments(nextAssignments);
+    if (!validation.ok) {
+      setManualFeedback({ type: 'error', text: validation.message });
+      return;
+    }
+
+    setAssignments(nextAssignments);
     setManualFeedback({ type: 'success', text: 'Assignment recorded for everyone.' });
     setManualMode(false);
     setManualRecipientId('');
@@ -299,6 +341,11 @@ const NameDraw = ({ selectedUserId }) => {
     const result = backtrack(0, { ...assignments });
 
     if (result) {
+      const validation = validateAssignments(result);
+      if (!validation.ok) {
+        setDrawFeedback({ type: 'error', text: validation.message });
+        return;
+      }
       setAssignments(result);
       setDrawFeedback({ type: 'success', text: 'Remaining names assigned successfully!' });
     } else {
@@ -322,7 +369,7 @@ const NameDraw = ({ selectedUserId }) => {
     setRevealMessage(`You are shopping for ${getDisplayName(assignedId)}.`);
   };
 
-  const manualRecipientOptions = selectedParticipantId
+  const manualRecipientOptions = selectedParticipantId && !selectedParticipantHasAssignment
     ? participants.filter((person) => {
         const giverAssignment = assignments[selectedParticipantId];
         const giver = participantMap.get(selectedParticipantId);
@@ -365,8 +412,12 @@ const NameDraw = ({ selectedUserId }) => {
           <button
             style={styles.secondaryButton}
             type="button"
-            disabled={!selectedParticipantId}
+            disabled={!selectedParticipantId || selectedParticipantHasAssignment}
             onClick={() => {
+              if (selectedParticipantHasAssignment) {
+                setManualFeedback({ type: 'error', text: 'Your pick is already recorded. Contact an organizer to make changes.' });
+                return;
+              }
               setManualMode(true);
               setManualFeedback(null);
             }}
@@ -375,6 +426,11 @@ const NameDraw = ({ selectedUserId }) => {
           </button>
         </div>
         {!selectedParticipantId && <p style={{ ...styles.message, ...styles.error }}>Select your name in the header first.</p>}
+        {selectedParticipantHasAssignment && selectedRecipientName && (
+          <p style={{ ...styles.message, ...styles.success }}>
+            Your pick is locked in as {selectedRecipientName}. Reach out to an organizer if something looks wrong.
+          </p>
+        )}
         {revealMessage && <p style={{ ...styles.message, ...(revealVerified ? styles.success : styles.error) }}>{revealMessage}</p>}
       </section>
 
@@ -394,6 +450,11 @@ const NameDraw = ({ selectedUserId }) => {
             </button>
           </div>
           <p>{selectedParticipant ? `Recording an entry for ${selectedParticipant.name}.` : 'Pick yourself in the header to continue.'}</p>
+          {selectedParticipantHasAssignment && selectedRecipientName && (
+            <p style={{ ...styles.message, ...styles.error }}>
+              Your household already recorded {selectedRecipientName}. Reach out to an organizer to make updates.
+            </p>
+          )}
           <label style={styles.label} htmlFor="manual-recipient">
             Who did you draw?
           </label>
@@ -402,6 +463,7 @@ const NameDraw = ({ selectedUserId }) => {
             style={styles.select}
             value={manualRecipientId}
             onChange={(event) => setManualRecipientId(event.target.value)}
+            disabled={!selectedParticipantId || selectedParticipantHasAssignment}
           >
             <option value="">Select a person</option>
             {manualRecipientOptions.map((person) => (
@@ -410,7 +472,12 @@ const NameDraw = ({ selectedUserId }) => {
               </option>
             ))}
           </select>
-          <button style={styles.button} type="button" onClick={handleManualSubmit}>
+          <button
+            style={styles.button}
+            type="button"
+            onClick={handleManualSubmit}
+            disabled={!selectedParticipantId || selectedParticipantHasAssignment}
+          >
             Save Manual Assignment
           </button>
           {manualFeedback && (
