@@ -92,6 +92,11 @@ const styles = {
     color: '#b91c1c',
     fontSize: '0.8rem',
     cursor: 'pointer'
+  },
+  link: {
+    wordBreak: 'break-all',
+    display: 'inline-block',
+    maxWidth: '100%'
   }
 };
 
@@ -359,7 +364,7 @@ const Family = ({ selectedUserId }) => {
                       wishlist.links.map((link, index) => (
                         <li key={`${person.id}-link-${index}`}>
                           <a href={link} target="_blank" rel="noreferrer">
-                            {link}
+                            <span style={styles.link}>{link}</span>
                           </a>
                           {canEdit && (
                             <button
